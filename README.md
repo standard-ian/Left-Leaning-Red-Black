@@ -9,16 +9,22 @@ core hierarchy of "contestants" uses RTTI and dynamic binding.
 Red_Black container has the following methods:
 
 ```
+    //create and assignment
         Red_Black();
         Red_Black(const Red_Black &source);
         Red_Black<KEY, DATA>& operator=(const Red_Black &source);
 
-        //display methods
-        //'tree_string' is overloaded as <<
+    //display the DATA in KEY sorted order
+    //uses << on the DATA
+    //add display(data_type) template method to dereference pointer DATA
+    //display(std::shared_ptr) has already been implemented
         int display();
+
+    //display a graphical representation of the tree
+        ostream& operator<<(ostream &out, Red_Black &tree);
         std::string tree_string() const;
 
-        //template methods
+    //container access methods
         int size() const;
         bool insert(const KEY &key, const DATA &data);
         bool find(const KEY &key) const;
