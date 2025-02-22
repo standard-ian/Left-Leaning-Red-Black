@@ -1,32 +1,37 @@
 /*
+ *********************************************************************
  * Ian Leuty
  * ileuty@pdx.edu
  * 2/16/2025
  * CS302 Winter 2025
  * Program #3
- *
  *********************************************************************
- *
  * core hierarchy definition
- *
  *********************************************************************
  *
  */
 
 #include "core.h"
 
+//core.h scope overloaded method to display a contesntant with <<
+//by calling overridden:
+//      Derived_Contestant.display(ostream&);
+std::ostream& operator<<(std::ostream &out, const Contestant &here)
+{
+    here.display(out);
+    return out;
+}
+
 /*
  *********************************************************************
- *
  * Contestant class definition
- * Abstract base class
+ * Abstract Base Class
  *
  * data members are:
  *      std::string name;
  *      std::string status;
  *      bool disqualified;
  *      int avg_speed;
- *
  *********************************************************************
  */
 
@@ -36,14 +41,7 @@ Contestant::Contestant(std::string &name_in) : name(name_in), status("REGISTERED
     using std::cin, std::cout;
 
     cout << "Enter " << name << "'s average speed (kilometers/hr).\n>";
-    cin >> avg_speed;
-    while (cin.fail()){
-        cin.clear();
-        cin.ignore(100,'\n');
-        cout << "Enter " << name << "'s average speed in km/h.\n>";
-        cin >> avg_speed;
-    }
-    cin.ignore(100,'\n');
+    avg_speed = read_int();
 }
 
 //file constructor - create a contestant from ifstream
@@ -121,17 +119,34 @@ bool Contestant::is_status(const std::string &status)
     return this -> status.compare(status) == 0;
 }
 
+//reads an int in and return it
+const int Contestant::read_int()
+{
+    using std::cout, std::cin, std::endl;
+
+    int the_int{};
+    cout << ">";
+    cin >> the_int;
+    while (cin.fail()){
+        cin.clear();
+        cin.ignore(100, '\n');
+        cout << "\nYou must enter a number." << endl;
+        cout << ">";
+        cin >> the_int;
+    }
+    cin.ignore(100, '\n');
+    return the_int;
+}
+
 /*
- *********************************************************************
- *
+ **********************************************************************
  * Walking_Contestant class definition
  *
  * data members are:
  *      int kms_registered;
  *      std::string conversation_topic;
  *      bool tied_shoes;
- *
- *********************************************************************
+ **********************************************************************
  */
 
 //default constructor - create a Walking_Contestant from stdin
@@ -215,8 +230,7 @@ bool Walking_Contestant::check_in()
 
     char tied{};
     cout << "\nConfirm the distance " << name << " will be walking today (kilometers).\n>";
-    cin >> kms_registered;
-    cin.ignore(100, '\n');
+    kms_registered = read_int();
     if (kms_registered > 20 || kms_registered < 1){
         cout << "\nContestant cannot register for more than 20 kms as a walker. Exiting." << endl;
         return false;
@@ -226,6 +240,8 @@ bool Walking_Contestant::check_in()
     cin.ignore(100, '\n');
     if (toupper(tied) == 'Y')
         tied_shoes = true;
+    else
+        cout << "\nWarning, untied shoes are a hazard." << endl;
 
     status = "CHECKED IN";
     return true;
@@ -239,14 +255,10 @@ float Walking_Contestant::predict_completion(int time)
     return ((hours * static_cast<float>(avg_speed)) / static_cast<float>(kms_registered)) * 100;
 }
 
-//upcasts a Walking_Contestant on return
-std::unique_ptr<Contestant> Walking_Contestant::clone() const
-{
-    return std::make_unique<Walking_Contestant>(*this);
-}
+
+
 /*
- *********************************************************************
- *
+ **********************************************************************
  * Bicycle_Contestant class definition
  *
  * data members are:
@@ -254,8 +266,7 @@ std::unique_ptr<Contestant> Walking_Contestant::clone() const
  *      int race_stages;
  *      std::string fav_bike;
  *      std::string emergency_contact;
- *
- *********************************************************************
+ **********************************************************************
  */
 
 //default constructor - creates a Bicycle_Contestant from stdin
@@ -333,14 +344,11 @@ bool Bicycle_Contestant::check_in()
 
     char check{};
     cout << "\nConfirm the number of 3km stages " << name << " will be completing today\n>";
-    cin >> race_stages;
-    while (cin.fail() || race_stages > 10 || race_stages < 2){
-        cin.clear();
-        cin.ignore(100, '\n');
+    race_stages = read_int();
+    while (race_stages > 10 || race_stages < 2){
         cout << "Contestant must sign up for 2 - 10 3km race stages. Enter a value in this range.\n";
-        cin >> race_stages;
+        race_stages = read_int();
     }
-    cin.ignore(100, '\n');
 
     cout << "Has " << name << " signed the waiver? (y/n)\n>";
     cin >> check;
@@ -368,15 +376,10 @@ float Bicycle_Contestant::predict_completion(int time)
     return ((hours * static_cast<float>(avg_speed)) / (3 * race_stages)) * 100;
 }
 
-//upcasts a Bicycle_Contestant on return
-std::unique_ptr<Contestant> Bicycle_Contestant::clone() const
-{
-    return std::make_unique<Bicycle_Contestant>(*this);
-}
+
 
 /*
  *********************************************************************
- *
  * Half_Marathon_Contestant class definition
  *
  * data members are:
@@ -384,7 +387,6 @@ std::unique_ptr<Contestant> Bicycle_Contestant::clone() const
  *      int hydration_level;
  *      bool record_holder;
  *      int previous_best;
- *
  *********************************************************************
  */
 
@@ -394,8 +396,7 @@ Half_Marathon_Contestant::Half_Marathon_Contestant(std::string &name) : Contesta
     using std::cout, std::cin;
 
     cout << "Enter " << name << "'s previous best time for the half marathon (21k) in minutes.\n>";
-    cin >> previous_best;
-    cin.ignore(100, '\n');
+    previous_best = read_int();
 }
 
 //file constructor, creates a Half_Marathon_Contestant from ifstream
@@ -469,8 +470,7 @@ bool Half_Marathon_Contestant::hydrate()
             cout << "\nGULP!" << endl;
             cout << "\n\033[38;5;39m" << setw(3) << hydration_level << '%' << " hydrated" << "\033[0;0m" << endl;
             cout << "\nDrink more? (y/n)\n>";
-            cin >> drink;
-            cin.ignore(100, '\n');
+            drink = read_int();
         } while (toupper(drink) == 'Y' && hydration_level < 100);
         if (hydration_level == 100)
             cout << "\n" << name << " is fully hydrated." << endl;
@@ -528,15 +528,3 @@ float Half_Marathon_Contestant::predict_completion(int time)
     return ((hours * adjusted_speed) / 21) * 100;
 }
 
-//upcasts a Half_Marathon_Contestant on return
-std::unique_ptr<Contestant> Half_Marathon_Contestant::clone() const
-{
-    return std::make_unique<Half_Marathon_Contestant>(*this);
-}
-
-//global overloaded method for display a contesntant with <<
-std::ostream& operator<<(std::ostream &out, const Contestant &here)
-{
-    here.display(out);
-    return out;
-}

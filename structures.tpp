@@ -1,31 +1,29 @@
 /*
+ *********************************************************************
  * Ian Leuty
  * ileuty@pdx.edu
  * 2/18/2025
- * CS302 Winter 2025
+ * CS302 Winter 2025dsasda
  * Program #3
  *
- ********************************************************************
- *
- * data structures implementation
+ *********************************************************************
  * red black tree and node
- *
+ *      implemented as class class template
  *********************************************************************
  */
 
-using std::unique_ptr, std::make_unique, std::string, std::vector, std::move, std::stringstream, std::optional, std::shared_ptr;
+using std::unique_ptr, std::make_unique, std::string, std::vector,
+      std::move, std::stringstream, std::optional, std::shared_ptr;
 
 
 /*
- ********************************************************************
- *
- * data structures implementation
+ *********************************************************************
  * node template
- *
  *********************************************************************
  */
 
-//node constructor, uses std::move to transfer in the key, data, and initial color setting
+//node constructor, uses std::move to transfer in the key, data,
+//and initial color setting
 template<typename KEY, typename DATA>
 Node<KEY, DATA>::Node(KEY key_in, DATA data_in, Color color_in) :
     key(move(key_in)), data(move(data_in)), color(move(color_in)) {}
@@ -60,7 +58,8 @@ string Node<KEY, DATA>::to_string() const
 
 //recursive method to build string of a node and its children
 template<typename KEY, typename DATA>
-void Node<KEY, DATA>::to_string(std::stringstream &ss, const std::string &prefix, const std::string &child_prefix) const
+void Node<KEY, DATA>::to_string(std::stringstream &ss,
+        const std::string &prefix, const std::string &child_prefix) const
 {
     //append current prefix to the stringstream
     ss << prefix << key << "\n";
@@ -93,15 +92,14 @@ void Node<KEY, DATA>::to_string(std::stringstream &ss, const std::string &prefix
         //use argument list to set that as current prefix for next frame
         //along with the appropriate red/black indicator
         //also pass new child prefix with correct intentation
-        left -> to_string(ss, child_prefix + "└─<L>" + (is_red(left.get()) ? RED : BLK),  child_prefix + "        ");
+        left -> to_string(ss,
+        child_prefix + "└─<L>" + (is_red(left.get()) ? RED : BLK),
+        child_prefix + "        ");
 }
 
 /*
- ********************************************************************
- *
- * data structures implementation
+ *********************************************************************
  * tree template
- *
  *********************************************************************
  */
 
@@ -116,8 +114,31 @@ Red_Black<KEY, DATA>::Red_Black(const Red_Black &source) : root(nullptr)
     copy(source.root, root);
 }
 
-//display the contents of the tree by using their overloaded insertion operators
-//WARNING - only to be used in the data is a pointer
+//overloaded assignment operator
+template<typename KEY, typename DATA>
+Red_Black<KEY, DATA>& Red_Black<KEY, DATA>::
+operator=(const Red_Black<KEY, DATA> &source)
+{
+    if (this == &source)
+        return *this;
+    root.reset();
+    make_copy(source.root, root);
+    return *this;
+}
+
+//copy function used by assignment operator and copy constructor
+template<typename KEY, typename DATA>
+void Red_Black<KEY, DATA>::make_copy(const unique_ptr<Node<KEY, DATA>> &source, unique_ptr<Node<KEY, DATA>> &dest)
+{
+    if (!source)
+        return;
+    dest = make_unique<Node<KEY, DATA>>(source -> key, source -> data, source -> color);
+    make_copy(source -> left, dest -> left);
+    make_copy(source -> right, dest -> right);
+}
+
+//display wrapper - display the contents of the tree
+//overload << for use with class objects
 template<typename KEY, typename DATA>
 int Red_Black<KEY, DATA>::display()
 {
@@ -126,7 +147,10 @@ int Red_Black<KEY, DATA>::display()
     return display(root.get());
 }
 
-//normal recursive display, for any data type that doesn't need dereferencing
+//display recursive
+//calls overloaded display_data template function
+//to avoid using << without * when DATA is a shared_ptr
+//add other templates if other pointer types will be used
 template<typename KEY, typename DATA>
 int Red_Black<KEY, DATA>::display(const Node<KEY, DATA> *root)
 {
@@ -140,41 +164,34 @@ int Red_Black<KEY, DATA>::display(const Node<KEY, DATA> *root)
 }
 
 
-//return the the data associated with a specific key
-//returns "false" if key is not found
+//recursively build a string representing the current tree
+//using recursion at the node level
+//only displays the keys
 template<typename KEY, typename DATA>
-bool Red_Black<KEY, DATA>::find(const KEY &key) const
+string Red_Black<KEY, DATA>::tree_string() const
 {
-    const Node<KEY, DATA> *node = root.get();
-    while (node){
-        if (key < node -> key)
-            node = node -> left.get();
-        else if (key > node -> key)
-            node = node -> right.get();
-        else
-            //found the data matching key
-            return true;
-    }
-    return false;
+    if (root)
+        return root -> to_string();
+    return "";
 }
 
-//retrieve a reference to the DATA
-//could be something where a reference is desired
-//even w/ shared pointers this should help keep the reference count down
+//size wrapper
 template<typename KEY, typename DATA>
-DATA& Red_Black<KEY, DATA>::retrieve(const KEY &key)
+int Red_Black<KEY, DATA>::size() const
 {
-    Node<KEY, DATA> *node = root.get();
-    while (node){
-        if (key < node -> key)
-            node = node -> left.get();
-        else if (key > node -> key)
-            node = node -> right.get();
-        else
-            //found the data matching key
-            return node -> data;
-    }
-    throw TREE_ERROR::not_found_exception();
+    return size(root.get());
+}
+
+//size recursive, count the number if items in the tree
+template<typename KEY, typename DATA>
+int Red_Black<KEY, DATA>::size(const Node<KEY, DATA> *root) const
+{
+    if (!root)
+        return 0;
+    int counted{size(root -> left.get())};
+    ++counted;
+    counted += size(root -> right.get());
+    return counted;
 }
 
 //insert wrapper
@@ -189,140 +206,16 @@ bool Red_Black<KEY, DATA>::insert(const KEY &key, const DATA &data)
     root = insert(root, key, data);
 
     //always make sure root is black
-    root -> color = Color::BLACK;
-    return true;
-}
-
-//fetch all the KEY by data into a vector in sorted order
-template<typename KEY, typename DATA>
-int Red_Black<KEY, DATA>::fetch_keys(vector<KEY> &keys) const
-{
-    keys.reserve(size(root.get()));
-    return fetch_keys(root.get(), keys);
-}
-
-//fetch all the DATA by reference into a vector in KEY sorted order
-template<typename KEY, typename DATA>
-int Red_Black<KEY, DATA>::fetch_data(vector<DATA> &data)
-{
-    data.reserve(size(root.get()));
-    return fetch_data(root.get(), data);
-}
-
-//recursively build a string representing the current tree
-//only displays the keys
-template<typename KEY, typename DATA>
-string Red_Black<KEY, DATA>::tree_string() const
-{
     if (root)
-        return root -> to_string();
-    return "";
-}
+        root -> color = Color::BLACK;
 
-
-//is the node passed in red (wrapper for node's is_red)
-template<typename KEY, typename DATA>
-bool Red_Black<KEY, DATA>::is_red(const Node<KEY, DATA> *node)
-{
-    return Node<KEY, DATA>::is_red(node);
-}
-
-//rotate the tree left from "h"
-template<typename KEY, typename DATA>
-unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::rotate_left(unique_ptr<Node<KEY, DATA>> &node)
-{
-    //assert(is_red(h -> right.get()));
-    unique_ptr<Node<KEY, DATA>> temp = move(node -> right);
-    node -> right = move(temp -> left);
-    temp -> left = move(node);
-    temp -> color = temp -> left -> color;
-    temp -> left -> color = Color::RED;
-    //update indentation_lvl
-    temp -> left -> indentation_lvl = 1 + indentation(temp -> left -> left.get()) + indentation(temp -> left -> right.get());
-    temp -> indentation_lvl = 1 + indentation(temp -> left.get()) + indentation(temp -> right.get());
-    return temp;
-}
-
-//move the red pointer left (used on deletion)
-template<typename KEY, typename DATA>
-unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::red_left(unique_ptr<Node<KEY, DATA>> &node)
-{
-    flip_colors(node.get());
-
-    //need to check if there is a disallowed right red child
-    //make 'node' a red node and it's children black by rotating twice and flipping colors
-    if (node -> right && is_red(node -> right -> left.get()))
-    {
-        node -> right = rotate_right(node -> right);
-        node = rotate_left(node);
-        flip_colors(node.get());
-    }
-    return move(node);
-}
-
-//rotate the tree right from "h"
-//assert checks a condition and returns if its false
-template<typename KEY, typename DATA>
-unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::rotate_right(unique_ptr<Node<KEY, DATA>> &node)
-{
-    //assert(is_red(h -> left.get()));
-    unique_ptr<Node<KEY, DATA>> temp = move(node -> left);
-    node -> left = move(temp -> right);
-    temp -> right = move(node);
-    temp -> color = temp -> right -> color;
-    temp -> right -> color = Color::RED;
-    //update indentation_lvl
-    temp -> right -> indentation_lvl = 1 + indentation(temp -> right -> left.get()) + indentation(temp -> right -> right.get());
-    temp -> indentation_lvl = 1 + indentation(temp -> left.get()) + indentation(temp -> right.get());
-    return temp;
-}
-
-//move the red node to the right, (used on deletion)
-template<typename KEY, typename DATA>
-unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::red_right(unique_ptr<Node<KEY, DATA>> &node)
-{
-
-    flip_colors(node.get());
-
-    //need to check for double red to the left
-    //if so, rotate right and flip colors again
-    if (node -> left && is_red(node -> left -> left.get()))
-    {
-        node = rotate_right(node);
-        flip_colors(node.get());
-    }
-    return move(node);
-}
-
-//take as black source with red children and make it red with black children
-//assert checks a condition and returns if its false
-template<typename KEY, typename DATA>
-void Red_Black<KEY, DATA>::flip_colors(Node<KEY, DATA> *source)
-{
-    //assertions had to be removed upon removal implementation
-    //because of the double rotations, they will fail after the first rotation
-
-    //source is black
-    //assert(!is_red(source));
-    //source's left is red
-    //assert(is_red(source -> left.get()));
-    //source's right is red
-    //assert(is_red(source -> right.get()));
-
-    //invert those given colors
-    //also because of double rotations, we now need this check to avoid dereferencing a null left/right pointer.
-    if (!source -> left || !source -> right)
-        return;
-
-    //perform standard color inversion
-    source -> color = Color::RED;
-    source -> left -> color = Color::BLACK;
-    source -> right -> color = Color::BLACK;
+    return true;
 }
 
 //insert recursive
 template<typename KEY, typename DATA>
-unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key, const DATA &data)
+unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::
+insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key, const DATA &data)
 {
     //reached the insert point, make a new node colored red and return it
     if (!root)
@@ -358,22 +251,67 @@ unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::insert(unique_ptr<Node<KEY, DA
 
 
     //fix root's indentation
-    root -> indentation_lvl = 1 + indentation(root -> left.get()) + indentation(root -> right.get());
+    root -> indentation_lvl = 1
+    + indentation(root -> left.get())
+    + indentation(root -> right.get());
 
     //return root to the previous call
     return move(root);
 }
 
-//get the agregated indentation of a given node
+//return the the data associated with a specific key
+//returns "false" if key is not found
 template<typename KEY, typename DATA>
-int Red_Black<KEY, DATA>::indentation(const Node<KEY, DATA> *a_node) const
+bool Red_Black<KEY, DATA>::find(const KEY &key) const
 {
-    if (!a_node)
-        return 0;
-    return a_node -> indentation_lvl;
+    const Node<KEY, DATA> *node = root.get();
+    while (node){
+        if (key < node -> key)
+            node = node -> left.get();
+        else if (key > node -> key)
+            node = node -> right.get();
+        else
+            //found the data matching key
+            return true;
+    }
+    return false;
 }
 
-//recursive fetch the keys into a vector
+//overloaded [] for retrieving a REFERENCE to DATA
+template<typename KEY, typename DATA>
+DATA& Red_Black<KEY, DATA>::operator[](const KEY &key)
+{
+    return retrieve(key);
+}
+
+//retrieve a reference to the DATA
+//could be something where a reference is desired
+//even w/ shared pointers this should help keep the reference count down
+template<typename KEY, typename DATA>
+DATA& Red_Black<KEY, DATA>::retrieve(const KEY &key)
+{
+    Node<KEY, DATA> *node = root.get();
+    while (node){
+        if (key < node -> key)
+            node = node -> left.get();
+        else if (key > node -> key)
+            node = node -> right.get();
+        else
+            //found the data matching key
+            return node -> data;
+    }
+    throw TREE_ERROR::not_found_exception();
+}
+
+//fetch all the KEY (by value) into a vector in sorted order
+template<typename KEY, typename DATA>
+int Red_Black<KEY, DATA>::fetch_keys(vector<KEY> &keys) const
+{
+    keys.reserve(size(root.get()));
+    return fetch_keys(root.get(), keys);
+}
+
+//recursively fetch KEYs into a vector
 template<typename KEY, typename DATA>
 int Red_Black<KEY, DATA>::fetch_keys(const Node<KEY, DATA> *root, std::vector<KEY> &keys) const
 {
@@ -386,7 +324,15 @@ int Red_Black<KEY, DATA>::fetch_keys(const Node<KEY, DATA> *root, std::vector<KE
     return fetched;
 }
 
-//recursive fetch data into a vector
+//fetch all the DATA into a vector in KEY sorted order
+template<typename KEY, typename DATA>
+int Red_Black<KEY, DATA>::fetch_data(vector<DATA> &data)
+{
+    data.reserve(size(root.get()));
+    return fetch_data(root.get(), data);
+}
+
+//recursive fetch all DATA into a vector
 template<typename KEY, typename DATA>
 int Red_Black<KEY, DATA>::fetch_data(const Node<KEY, DATA> *root, vector<DATA> &data)
 {
@@ -397,6 +343,16 @@ int Red_Black<KEY, DATA>::fetch_data(const Node<KEY, DATA> *root, vector<DATA> &
     ++fetched;
     fetched += fetch_data(root -> right.get(), data);
     return fetched;
+}
+
+//remove all - smart pointers
+//safely clear entire tree by setting root to null
+template<typename KEY, typename DATA>
+int Red_Black<KEY, DATA>::remove_all()
+{
+    int num_items{size(root.get())};
+    root.reset();
+    return num_items;
 }
 
 //remove wrapper
@@ -413,7 +369,8 @@ bool Red_Black<KEY, DATA>::remove(const KEY &key)
 
 //remove recursive
 template<typename KEY, typename DATA>
-unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::remove(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
+unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::
+remove(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
 {
     if (!root) return nullptr;
 
@@ -475,61 +432,131 @@ unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::remove(unique_ptr<Node<KEY, DA
     return fixup(root);
 }
 
-//fix tree after deletion, recursive
+
+//rotate "node" and it's left and right 1 cycle left
 template<typename KEY, typename DATA>
-unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::fixup(unique_ptr<Node<KEY, DATA>> &node)
+unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::
+rotate_left(unique_ptr<Node<KEY, DATA>> &node)
 {
+    //hold node's right
+    unique_ptr<Node<KEY, DATA>> temp = move(node -> right);
+    //move node's right's left to node's right
+    node -> right = move(temp -> left);
+    //move node to temp's left
+    temp -> left = move(node);
 
-    //base case, no left tree
-    if (is_red(node -> right.get()))
+    //recolor
+    temp -> color = temp -> left -> color;
+    temp -> left -> color = Color::RED;
+
+    //update indentation_lvl
+    temp -> left -> indentation_lvl = 1
+    + indentation(temp -> left -> left.get())
+    + indentation(temp -> left -> right.get());
+
+    temp -> indentation_lvl = 1
+    + indentation(temp -> left.get())
+    + indentation(temp -> right.get());
+
+    return temp;
+}
+
+//rotate "node" and it's left and right 1 cycle right
+template<typename KEY, typename DATA>
+unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::
+rotate_right(unique_ptr<Node<KEY, DATA>> &node)
+{
+    //hold the left
+    unique_ptr<Node<KEY, DATA>> temp = move(node -> left);
+    //move node's left's right to node's left
+    node -> left = move(temp -> right);
+    //move node to temp's right
+    temp -> right = move(node);
+
+    //recolor
+    temp -> color = temp -> right -> color;
+    temp -> right -> color = Color::RED;
+
+    //update indentation_lvl
+    temp -> right -> indentation_lvl = 1
+    + indentation(temp -> right -> left.get())
+    + indentation(temp -> right -> right.get());
+
+    temp -> indentation_lvl = 1
+    + indentation(temp -> left.get())
+    + indentation(temp -> right.get());
+
+    return temp;
+}
+
+//move the red pointer left (used on deletion)
+template<typename KEY, typename DATA>
+unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::
+red_left(unique_ptr<Node<KEY, DATA>> &node)
+{
+    flip_colors(node.get());
+
+    //need to check if there is a disallowed right red child
+    //make 'node' a red node and it's children black
+    //by rotating twice and flipping colors
+    if (node -> right && is_red(node -> right -> left.get()))
+    {
+        node -> right = rotate_right(node -> right);
         node = rotate_left(node);
-
-    //if two left nodes in a row are black, move the current node left
-    if (is_red(node -> left.get()) && is_red(node -> left -> left.get()))
-        node = rotate_right(node);
-
-    if (is_red(node -> left.get()) && is_red(node -> right.get()))
         flip_colors(node.get());
-
-    //TODO
-    if (node){
-        node -> indentation_lvl = 1 + indentation(node -> left.get()) + indentation(node -> right.get());
     }
-
     return move(node);
 }
 
-//go to the smallest item and remove it
+//move the red node to the right, (used on deletion)
 template<typename KEY, typename DATA>
-unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::remove_ios(unique_ptr<Node<KEY, DATA>> &node)
+unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::
+red_right(unique_ptr<Node<KEY, DATA>> &node)
 {
-    //TODO
-    if (!node -> left)
-        return move(node -> right);
 
-    if (!is_red(node -> left.get()) && !is_red(node -> left -> left.get()))
-        node = red_left(node);
+    flip_colors(node.get());
 
-    node -> left = remove_ios(node -> left);
-    return fixup(node);
-    /*
-    if (node && node -> left && node -> left -> left){
-        if (!node -> right && !node -> left){
-            node.reset();
-            return nullptr;
-        }
-
-        if (!is_red(node -> left.get()) && !is_red(node -> left -> left.get()))
-            node = red_left(node);
-
-        node -> left = remove_ios(node -> left);
-        return fixup(node);
+    //need to check for double red to the left
+    //if so, rotate right and flip colors again
+    if (node -> left && is_red(node -> left -> left.get()))
+    {
+        node = rotate_right(node);
+        flip_colors(node.get());
     }
-    return nullptr;
-    */
+    return move(node);
 }
 
 
+//take as black source with red children and make it red with black children
+//assert checks a condition and returns if its false
+template<typename KEY, typename DATA>
+void Red_Black<KEY, DATA>::flip_colors(Node<KEY, DATA> *source)
+{
+    /*
+     * used these assertions early on:
+     *
+     *      //assert(!is_red(source));
+     *      //assert(is_red(source -> left.get()));
+     *      //assert(is_red(source -> right.get()));
+     *
+     * they had to be removed upon removal implementation
+     * due to double rotations they were briefly false on second call
+     *
+     */
+
+    //invert colors described above
+    //also because of double rotations,
+    //check to avoid dereferencing a null left/right pointer.
+    if (!source -> left || !source -> right){
+        source -> color = Color::RED;
+        return;
+    }
+
+    //perform standard color inversion otherwise
+    source -> color = Color::RED;
+    source -> left -> color = Color::BLACK;
+    source -> right -> color = Color::BLACK;
+}
 //go to the smallest item and get its key
 template<typename KEY, typename DATA>
 KEY& Red_Black<KEY, DATA>::retrieve_ios_key(Node<KEY, DATA> *node)
@@ -548,52 +575,72 @@ DATA& Red_Black<KEY, DATA>::retrieve_ios_data(Node<KEY, DATA> *node)
     return node -> data;
 }
 
-//overloaded assignment operator
+//go to the smallest item and remove it
 template<typename KEY, typename DATA>
-Red_Black<KEY, DATA>& Red_Black<KEY, DATA>::operator=(const Red_Black<KEY, DATA> &source)
+unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::
+remove_ios(unique_ptr<Node<KEY, DATA>> &node)
 {
-    if (this == &source)
-        return *this;
-    root.reset();
-    make_copy(source.root, root);
-    return *this;
+    //no left node
+    if (!node -> left)
+        return move(node -> right);
+
+    //left and left -> left are black
+    if (!is_red(node -> left.get()) && !is_red(node -> left -> left.get()))
+        node = red_left(node);
+
+    //recurse left and return to the left node
+    node -> left = remove_ios(node -> left);
+
+    return fixup(node);
 }
 
-//copy function used by assignment operator
+//fix tree after deletion, recursive
 template<typename KEY, typename DATA>
-void Red_Black<KEY, DATA>::make_copy(const unique_ptr<Node<KEY, DATA>> &source, unique_ptr<Node<KEY, DATA>> &dest)
+unique_ptr<Node<KEY, DATA>> Red_Black<KEY, DATA>::
+fixup(unique_ptr<Node<KEY, DATA>> &node)
 {
-    if (!source)
-        return;
-    dest = make_unique<Node<KEY, DATA>>(source -> key, source -> data, source -> color);
-    make_copy(source -> left, dest -> left);
-    make_copy(source -> right, dest -> right);
+    if (!node)
+        return nullptr;
+
+    //if nodes's right is red, left is not, rotate according to LLRB rules
+    if (is_red(node -> right.get()) && !is_red(node -> left.get()))
+        node = rotate_left(node);
+
+    //1. there is a left and a left left
+    //2. they are both red
+    if (node -> left && is_red(node -> left.get())
+    && node -> left -> left
+    && is_red(node -> left -> left.get()))
+        node = rotate_right(node);
+
+    //left is red and right is red
+    if (is_red(node -> left.get()) && is_red(node -> right.get()))
+        flip_colors(node.get());
+
+    //fix inentation_lvl
+    if (node)
+        node -> indentation_lvl = 1
+        + indentation(node -> left.get())
+        + indentation(node -> right.get());
+
+    return move(node);
 }
 
-//remove all for testing assignmenr operator
+
+//call Node's is_red
 template<typename KEY, typename DATA>
-int Red_Black<KEY, DATA>::remove_all()
+bool Red_Black<KEY, DATA>::is_red(const Node<KEY, DATA> *node)
 {
-    int num_items{size(root.get())};
-    root.reset();
-    return num_items;
+    return Node<KEY, DATA>::is_red(node);
 }
 
-//wrapper to get the number of items currently in the tree
+//get the agregated indentation of a given node
 template<typename KEY, typename DATA>
-int Red_Black<KEY, DATA>::size() const
+int Red_Black<KEY, DATA>::indentation(const Node<KEY, DATA> *a_node) const
 {
-    return size(root.get());
-}
-
-//count the items in the tree recursively
-template<typename KEY, typename DATA>
-int Red_Black<KEY, DATA>::size(const Node<KEY, DATA> *root) const
-{
-    if (!root)
+    if (!a_node)
         return 0;
-    int counted{size(root -> left.get())};
-    ++counted;
-    counted += size(root -> right.get());
-    return counted;
+    return a_node -> indentation_lvl;
 }
+
+

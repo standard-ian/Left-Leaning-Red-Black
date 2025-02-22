@@ -1,29 +1,36 @@
 /*
+ *********************************************************************
  * Ian Leuty
  * ileuty@pdx.edu
  * 2/16/2025
  * CS302 Winter 2025
  * Program #3
- * ******************************************************************** * * * application definition
- *
+ *********************************************************************
+ * application function definitions
  *********************************************************************
  */
 
-/*
- * menu class implementation
- * data menmbers are:
- ***************************************************************************
- */
 #include "application.h"
 using namespace std;
+
+
+/*
+ *********************************************************************
+ * menu class implementation
+ * data menmbers are:
+        Red_Black<std::string, std::shared_ptr<Contestant>> tree;
+        bool cycling{}, walking{}, running {};
+        std::ifstream filein;
+        std::string filename;
+ *********************************************************************
+ */
+
 
 //default constructor
 Menu::Menu() : filename("") {}
 //splash screen and menu entry
-void Menu::prompt()
+void Menu::splash()
 {
-    int choice{};
-
     //push up to top of term window and print welcome
 cout << "\033[2J\033[1;1H" << "\033[38;3;39m" << endl
          << R"(
@@ -36,76 +43,10 @@ cout << "\033[2J\033[1;1H" << "\033[38;3;39m" << endl
             ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝)"
 
          << "\033[0;0m" << endl;
-
     cout << "\nRace Day! Please be aware of the following registration rules:"
          << "\nA. Racers must be checked in before a race starts, or they will be disqualified or potentially injured."
          << "\nB. Hydrating a marathoner will help them race faster!"
          << "\nC. Races may be started only once." << endl;
-    do{
-        cout << "\n\nPlease select an action."
-             << "\n0.  Quit."
-
-             << "\n\n1.  Load contestants from a roster."
-             << "\n2.  Manually register contestant(s)."
-             << "\n3.  Estimate a contestant's progress."
-             << "\n4.  Hydrate a half marathoner."
-             << "\n5.  Check in a contestant."
-             << "\n6.  Start a race."
-             << "\n7.  Unregister a contestant."
-             << "\n8.  Find out if a contestant is registered."
-             << "\n9.  View registered contestants."
-             << "\n10. Disqualify a contestant."
-             << "\n11. Display a graphical representation of the underlying Red Black Tree."
-             << "\n12. Test assignment operator."
-             << "\n13. View animated tree insertion. (WARNING: takes ~2 minutes with 100 items.)"
-
-             << "\n>";
-        choice = read_int();
-        switch (choice){
-            case 1:
-                load_contestants();
-                break;
-            case 2:
-                register_contestants();
-                break;
-            case 3:
-                estimate_completion();
-                break;
-            case 4:
-                hydrate_runner();
-                break;
-            case 5:
-                check_in();
-                break;
-            case 6:
-                start_race();
-                break;
-            case 7:
-                unregister();
-                break;
-            case 8:
-                find_contestant();
-                break;
-            case 9:
-                display_contestants();
-                break;
-            case 10:
-                disqualify();
-                break;
-            case 11:
-                graphical_tree();
-                break;
-            case 12:
-                test_copying();
-                break;
-            case 13:
-                animate();
-                break;
-            default:
-                break;
-        }
-    } while (choice);
-
 }
 
 //clean application interface for loading contestants
@@ -221,7 +162,7 @@ bool Menu::reg()
                 case 2: {
                             auto cycle_ptr{make_shared<Bicycle_Contestant>(name)};
                             success = tree.insert(name, move(cycle_ptr));
-                            auto test = tree.retrieve(name);
+                            auto test = tree[name];
                             cout << *test;
                         }
                     break;
@@ -254,11 +195,11 @@ bool Menu::reg()
 //clean interface for client to display
 void Menu::display_contestants()
 {
-    int displayed{};
     cout << "\nDisplay Contestants." << endl;
     vector<shared_ptr<Contestant>> contestants;
     tree.fetch_data(contestants);
     do{
+        int displayed{};
         int choice{};
         cout << "\nWhich registration to view?"
              << "\n0. Return to the main menu."
@@ -332,10 +273,10 @@ void Menu::hydrate_runner()
         cout << "\nEnter a runner's name to hydrate them.\n>";
         getline(cin, name);
         try{
-            //use the Red_Black retrieve function which returns a unique_ptr reference to the player at a node
+            //use the Red_Black retrieve function (overloaded []) which returns a unique_ptr reference to the player at a node
             //dynamic cast to ID the player type and allow them to hydrate properly if a runner....or..... :)
-            auto w_ptr{dynamic_pointer_cast<Walking_Contestant>(tree.retrieve(name))};
-            auto hm_ptr{dynamic_pointer_cast<Half_Marathon_Contestant>(tree.retrieve(name))};
+            auto w_ptr{dynamic_pointer_cast<Walking_Contestant>(tree[name])};
+            auto hm_ptr{dynamic_pointer_cast<Half_Marathon_Contestant>(tree[name])};
 
             if (hm_ptr)
                 hm_ptr -> hydrate();
@@ -385,7 +326,7 @@ void Menu::estimate_completion()
 
         if (tree.find(name)){
             cout << "\n" << name << " is registered." << endl;
-            if (!tree.retrieve(name) -> is_status("CHECKED IN")){
+            if (!tree[name] -> is_status("CHECKED IN")){
                 cout << "\nNot enough details to estimate " << name << "'s completion.\n"
                      << "This contestant must first check in.\n"
                      << "Check in now? (y/n)\n>";
@@ -398,7 +339,7 @@ void Menu::estimate_completion()
             else{
                 cout << "\nEnter the elapsed time since the start of their race (minutes)." << endl;
                 int time_from_start{read_int()};
-                float completion{tree.retrieve(name) -> predict_completion(time_from_start)};
+                float completion{tree[name] -> predict_completion(time_from_start)};
                 if (completion < 100 && completion > 0)
                     cout << "\n" << name << "'s completion percentage will be "
                          << completion << "% after " << time_from_start << " minutes." << endl;
@@ -440,11 +381,11 @@ void Menu::check(const string &name)
     char choice{};
     if (tree.find(name)){
         cout << "\n" << name << " is registered." << endl;
-        if (tree.retrieve(name) -> is_status("CHECKED IN"))
+        if (tree[name] -> is_status("CHECKED IN"))
             cout << "\n" << name << " was already checked in." << "\n" << endl;
-        else if (tree.retrieve(name) -> check_in()){
+        else if (tree[name] -> check_in()){
             cout << "\n" << name << " has been checked in." << "\n" << endl;
-            cout << *tree.retrieve(name);
+            cout << *tree[name];
         }
     }
     else{
@@ -457,6 +398,8 @@ void Menu::check(const string &name)
 }
 
 //start a particular race
+//retrieve them all from the tree into a vector
+//then, loop through and
 //use RTTI to find correct contestants and mark them as started.
 void Menu::start_race()
 {
@@ -478,6 +421,7 @@ void Menu::start_race()
                             if (auto w_ptr{dynamic_pointer_cast<Walking_Contestant>(item)})
                                 w_ptr -> start();
                         }
+                        cout << "\nWalking Race started!" << endl;
                     }
                     else
                         cout << "\nThe walking race has already started." << endl;
@@ -489,6 +433,7 @@ void Menu::start_race()
                             if (auto b_ptr{dynamic_pointer_cast<Bicycle_Contestant>(item)})
                                 b_ptr -> start();
                         }
+                        cout << "\nCycling Race started!" << endl;
                     }
                     else
                         cout << "\nThe cycling race has already started." << endl;
@@ -501,6 +446,7 @@ void Menu::start_race()
                             if (auto hm_ptr{dynamic_pointer_cast<Half_Marathon_Contestant>(item)})
                                 hm_ptr -> start();
                         }
+                        cout << "\nHalf Marathon started!" << endl;
                     }
                     else
                         cout << "\nThe half marathon has already started." << endl;
@@ -523,11 +469,11 @@ void Menu::disqualify()
         getline(cin, name);
         if (tree.find(name)){
             cout << "\n" << name << " is registered." << endl;
-            if (tree.retrieve(name) -> is_status("DISQUALIFIED"))
+            if (tree[name] -> is_status("DISQUALIFIED"))
                 cout << "\n" << name << " was already disqualified." << "\n" << endl;
-            else if (tree.retrieve(name) -> disqualify()){
+            else if (tree[name] -> disqualify()){
                 cout << "\n" << name << " has been disqualified." << "\n" << endl;
-                cout << *tree.retrieve(name);
+                cout << *tree[name];
             }
         }
         else

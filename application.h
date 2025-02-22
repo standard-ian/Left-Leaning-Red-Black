@@ -1,15 +1,29 @@
 /*
+ *********************************************************************
  * Ian Leuty
  * ileuty@pdx.edu
  * 2/16/2025
  * CS302 Winter 2025
  * Program #3
- *
- ********************************************************************
- *
- *
+ *********************************************************************
  * application declaration
- *
+ *********************************************************************
+ * These are available to be called from any "Menu" object.
+ *       void load_contestants();
+ *       void display_contestants();
+ *       void register_contestants();
+ *       void find_contestant();
+ *       void hydrate_runner();
+ *       void unregister();
+ *       void estimate_completion();
+ *       void check_in();
+ *       void start_race();
+ *       void disqualify();
+ *       void graphical_tree();
+ *       void test_copying();
+ *       void animate();
+ *       void animate_load();
+ *       void animate_removal();
  *********************************************************************
  */
 #include <unistd.h>
@@ -32,7 +46,7 @@ class Menu
 {
     public:
         Menu();
-        void prompt();
+        void splash();
 
         void load_contestants();
         void display_contestants();
@@ -49,6 +63,8 @@ class Menu
         void animate();
         void animate_load();
         void animate_removal();
+        const int read_int();
+        bool again();
 
     protected:
         //instantiation of the Red_Black tree template using
@@ -67,10 +83,5 @@ class Menu
         int load();
         bool reg();
         void check(const std::string &name);
-
-        //general utility functions
-        const int read_int();
-        bool again();
-
 };
 

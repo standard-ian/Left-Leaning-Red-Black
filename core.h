@@ -1,21 +1,17 @@
 /*
+ *********************************************************************
  * Ian Leuty
  * ileuty@pdx.edu
  * 2/16/2025
  * CS302 Winter 2025
  * Program #3
- *
  *********************************************************************
- *
  * core hierarchy declaration
- *
  *********************************************************************
- *
  * Shamrock Run
  * Half marathon, 8K, 6K, 5K, "stride" walk, Leprechaun Lap (1K)
  * Track contestants during the race
  * All race options treated the same (use dynamic binding)
- *
  *
  * Need to support:
  *      - 3 "Contenstants"
@@ -50,8 +46,6 @@
  *          -Use the STL whenever a list of data is required (except for the one data structure you are required to implement)..
  *          -Any class that manages dynamic memory with raw pointers will still need a copy constructor and an assignment operator.
  *          -We do not recommend implementing operator overloading with this assignment.
- *
- *
  *********************************************************************
  */
 
@@ -95,7 +89,6 @@ class Contestant
         virtual bool start() = 0;
         virtual bool check_in() = 0;
         virtual float predict_completion(int time) = 0;
-        virtual std::unique_ptr<Contestant> clone() const = 0;
 
         bool set_winner();
         bool disqualify();
@@ -107,6 +100,7 @@ class Contestant
     protected:
         std::string name;
         std::string status;
+        const int read_int();
         int avg_speed;
         bool disqualified;
 };
@@ -124,7 +118,6 @@ class Walking_Contestant: public Contestant
         bool start();
         bool check_in();
         float predict_completion(int time);
-        std::unique_ptr<Contestant> clone() const;
 
     protected:
         int kms_registered;
@@ -145,7 +138,6 @@ class Bicycle_Contestant : public Contestant
         bool start();
         bool check_in();
         float predict_completion(int time);
-        std::unique_ptr<Contestant> clone() const;
 
     protected:
         int race_stages;
@@ -168,7 +160,6 @@ class Half_Marathon_Contestant : public Contestant
         bool hydrate();
         bool check_in();
         float predict_completion(int time);
-        std::unique_ptr<Contestant> clone() const;
 
     protected:
         int racer_number;
