@@ -25,17 +25,12 @@ clean:
 run:
 	./$(PROG1)
 
-valgrind:
-	valgrind ./$(PROG1)
-
-gdb:
-	gdb ./$(PROG1)
-
 zip:
-	zip red_black_testing.zip *.in *.tpp *.cpp *.h Makefile
+	rm *.zip
+	zip red_black_testing.zip *.in *.tpp *.cpp *.h Makefile README.md
 
 git:
-	git add *.tpp *.h *.cpp *.in Makefile *.zip
+	git add *.tpp *.h *.cpp *.in Makefile *.zip README.md
 	git commit
 	git push
 
