@@ -31,3 +31,11 @@ valgrind:
 gdb:
 	gdb ./$(PROG1)
 
+zip:
+	zip red_black_testing.zip *.in *.tpp *.cpp *.h Makefile
+
+git:
+	git add *.tpp *.h *.cpp *.in Makefile *.zip
+	git commit
+	git push
+
