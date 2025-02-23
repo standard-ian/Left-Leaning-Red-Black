@@ -17,9 +17,6 @@
 #ifndef RB_TREE
 #define RB_TREE
 
-#include <optional>
-#include <utility>
-#include <cassert>
 #include <sstream>
 #include <iostream>
 #include <memory>
@@ -45,6 +42,7 @@ class Node
 {
     public:
         Node(KEY key_in, DATA data_in, Color color_in);
+        Node(KEY key_in, Color color_in);
 
         static bool is_red(const Node *node);
         std::string to_string() const;
@@ -88,7 +86,6 @@ class Red_Black
         bool insert(const KEY &key, const DATA &data);
         bool find(const KEY &key) const;
         DATA& operator[](const KEY &key);
-        DATA& retrieve(const KEY &key);
         int fetch_keys(std::vector<KEY> &keys) const;
         int fetch_data(std::vector<DATA> &data);
         int remove_all();
@@ -102,6 +99,8 @@ class Red_Black
         int display(const rb_node *root);
         int size(const rb_node *root) const;
         node_ptr insert(node_ptr &root, const KEY &key, const DATA &data);
+        DATA& insert(node_ptr &root, const KEY &key);
+        DATA& retrieve(const KEY &key);
         int fetch_keys(const rb_node *root, std::vector<KEY> &keys) const;
         int fetch_data(const rb_node *root, std::vector<DATA> &data);
         node_ptr remove(node_ptr &root, const KEY &key);

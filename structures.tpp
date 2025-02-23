@@ -13,7 +13,7 @@
  */
 
 using std::unique_ptr, std::make_unique, std::string, std::vector,
-      std::move, std::stringstream, std::optional, std::shared_ptr;
+      std::move, std::stringstream, std::shared_ptr;
 
 
 /*
@@ -27,6 +27,13 @@ using std::unique_ptr, std::make_unique, std::string, std::vector,
 template<typename KEY, typename DATA>
 Node<KEY, DATA>::Node(KEY key_in, DATA data_in, Color color_in) :
     key(move(key_in)), data(move(data_in)), color(move(color_in)) {}
+
+//node empty data constructor, uses std::move to transfer in the key
+//and initial color setting
+//used for insertion with operator[] in the tree
+template<typename KEY, typename DATA>
+Node<KEY, DATA>::Node(KEY key_in, Color color_in) :
+    key(move(key_in)), data{}, color(move(color_in)) {}
 
 
 //used to check color of a node (argument)
@@ -259,6 +266,48 @@ insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key, const DATA &data)
     return move(root);
 }
 
+//insert recursive, constructs empty item and returns reference to it
+//used by overloaded[]
+template<typename KEY, typename DATA>
+DATA& Red_Black<KEY, DATA>::
+insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
+{
+    if (!root){
+        root = make_unique<Node<KEY, DATA>>(key, Color::RED);
+        return root -> data;
+    }//if root's left and right are red
+
+    if (is_red(root -> left.get()) && is_red(root -> right.get()))
+        //make root red and it's left and right black
+        flip_colors(root.get());
+
+    //standard BST insertion procedude, head recursionn
+    //go left if less, assign return to root -> right
+    if (key < root -> key)
+        return insert(root -> left, key);
+
+    //right if greater, assign return to root -> left
+    else if (key > root -> key)
+        return insert(root -> right, key);
+
+    //if root's right is red and its left is black, rotate left
+    //left-leaning property - if a node has just one red child, it must be the left
+    if (is_red(root -> right.get()) && !is_red(root -> left.get()))
+        root = rotate_left(root);
+
+    //if 2 nodes to the left of root are successively red
+    if (is_red(root -> left.get()) && is_red(root -> left -> left.get()))
+        root = rotate_right(root);
+
+    //fix root's indentation
+    root -> indentation_lvl = 1
+    + indentation(root -> left.get())
+    + indentation(root -> right.get());
+
+    //return root to the previous call
+    return root -> data;
+}
+
 //return the the data associated with a specific key
 //returns "false" if key is not found
 template<typename KEY, typename DATA>
@@ -277,10 +326,16 @@ bool Red_Black<KEY, DATA>::find(const KEY &key) const
     return false;
 }
 
-//overloaded [] for retrieving a REFERENCE to DATA
+
+//overloaded [] for inserting/retrieving data DATA
+//behavior similar to map
 template<typename KEY, typename DATA>
 DATA& Red_Black<KEY, DATA>::operator[](const KEY &key)
 {
+    //if the data doesn't exist, construct a node with no data yet and return a reference to that.
+    if (!find(key)){
+        return insert(root, key);
+    }
     return retrieve(key);
 }
 
