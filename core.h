@@ -1,10 +1,8 @@
 /*
  *********************************************************************
  * Ian Leuty
- * ileuty@pdx.edu
+ * inleuty@gmail.com
  * 2/16/2025
- * CS302 Winter 2025
- * Program #3
  *********************************************************************
  * core hierarchy declaration
  *********************************************************************
@@ -37,15 +35,6 @@
  *          -Red black tree with nodes - UNIQUE key value for each node
  *          -Node has a smart pointer to the base class (Contestant) to experience dynamic binding and upcasting
  *
- *      - Other guidelines:
- *          -Use entirely the string class (no char *’s in this assignment allowed),
- *          -Use exception handling for detecting and handling in all erroneous situations
- *          -Write a Makefile to help the grader compile your work
- *          -Submit a README file with instructions!
- *          -Experiment with Smart Pointers in three places (but you may still use some raw pointers).
- *          -Use the STL whenever a list of data is required (except for the one data structure you are required to implement)..
- *          -Any class that manages dynamic memory with raw pointers will still need a copy constructor and an assignment operator.
- *          -We do not recommend implementing operator overloading with this assignment.
  *********************************************************************
  */
 

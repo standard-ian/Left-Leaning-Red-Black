@@ -1,11 +1,8 @@
 /*
  *********************************************************************
  * Ian Leuty
- * ileuty@pdx.edu
+ * inleuty@gmail.com
  * 2/18/2025
- * CS302 Winter 2025dsasda
- * Program #3
- *
  *********************************************************************
  * red black tree and node
  *      implemented as class class template
