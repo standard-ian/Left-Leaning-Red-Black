@@ -1,8 +1,10 @@
 /*
  *********************************************************************
  * Ian Leuty
- * inleuty@gmail.com
+ * ileuty@pdx.edu
  * 2/16/2025
+ * CS302 Winter 2025
+ * Program #3
  *********************************************************************
  * data structures declaration
  * left leaning red black tree and node

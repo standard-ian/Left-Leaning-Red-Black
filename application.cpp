@@ -517,7 +517,7 @@ void Menu::animate()
         cout << "\nInsertion or removal?"
              << "\n0. Return to Main Menu."
              << "\n1. Insertion."
-             << "\n2. Removal (Not perfect yet)."
+             << "\n2. Removal."
              << "\n>";
         choice = read_int();
         switch (choice){

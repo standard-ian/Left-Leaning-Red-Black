@@ -1,8 +1,11 @@
 /*
  *********************************************************************
  * Ian Leuty
- * inleuty@gmail.com
+ * ileuty@pdx.edu
  * 2/18/2025
+ * CS302 Winter 2025dsasda
+ * Program #3
+ *
  *********************************************************************
  * red black tree and node
  *      implemented as class class template
@@ -27,7 +30,6 @@ Node<KEY, DATA>::Node(KEY key_in, DATA data_in, Color color_in) :
 
 //node empty data constructor, uses std::move to transfer in the key
 //and initial color setting
-//used for insertion with operator[] in the tree
 template<typename KEY, typename DATA>
 Node<KEY, DATA>::Node(KEY key_in, Color color_in) :
     key(move(key_in)), data{}, color(move(color_in)) {}
@@ -252,8 +254,6 @@ insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key, const DATA &data)
     if (is_red(root -> left.get()) && is_red(root -> left -> left.get()))
         root = rotate_right(root);
 
-
-
     //fix root's indentation
     root -> indentation_lvl = 1
     + indentation(root -> left.get())
@@ -264,7 +264,10 @@ insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key, const DATA &data)
 }
 
 //insert recursive, constructs empty item and returns reference to it
-//used by overloaded[]
+//utilized pass by reference instead of pass by pointer (returning modified subtree pointers)
+//in order to hace a return type of DATA
+//used by overloaded[] to insert a "blank" node at key and allow client to modify it's DATA via reference.
+//allows for: tree[KEY] = DATA; style insertion like std::map
 template<typename KEY, typename DATA>
 DATA& Red_Black<KEY, DATA>::
 insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
@@ -272,7 +275,8 @@ insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
     if (!root){
         root = make_unique<Node<KEY, DATA>>(key, Color::RED);
         return root -> data;
-    }//if root's left and right are red
+    }
+    //if root's left and right are red
 
     if (is_red(root -> left.get()) && is_red(root -> right.get()))
         //make root red and it's left and right black
@@ -429,7 +433,6 @@ remove(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
     //if key is to the left of root
     if (key < root -> key){
 
-        //TODO
         if (!root -> left)
             return move(root);
 
@@ -454,30 +457,21 @@ remove(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
         //if a match is found and there is no right subtree
         //delete the item and return nullptr
         if (key == root -> key && !root -> right){
-            //TODO
-            return move(root -> left);
-            /*
-            root.reset();
             return nullptr;
-            */
         }
-        if (root -> right){
-            if (!is_red(root -> right.get()) && !is_red(root -> right -> left.get()))
-                root = red_right(root);
 
-            //found the match, but there is a right subtree
-            //find the ios and put it's values here
-            //then go to it again and delete it
-            if (key == root -> key){
+        if (!root -> right || (!is_red(root -> right.get()) && !is_red(root -> right -> left.get())))
+            root = red_right(root);
 
-                root -> data = retrieve_ios_data(root -> right.get());
-                root -> key = retrieve_ios_key(root -> right.get());
-                root -> right = remove_ios(root -> right);
-            }
+        if (key == root -> key){
 
-            else
-                root -> right = remove(root -> right, key);
+            root -> data = retrieve_ios_data(root -> right.get());
+            root -> key = retrieve_ios_key(root -> right.get());
+            root -> right = remove_ios(root -> right);
         }
+
+        else
+            root -> right = remove(root -> right, key);
     }
 
     //fix the red nodes not on the left and flip colors if needed
@@ -584,21 +578,29 @@ red_right(unique_ptr<Node<KEY, DATA>> &node)
 template<typename KEY, typename DATA>
 void Red_Black<KEY, DATA>::flip_colors(Node<KEY, DATA> *source)
 {
-    /*
-     * used these assertions early on:
-     *
-     *      //assert(!is_red(source));
-     *      //assert(is_red(source -> left.get()));
-     *      //assert(is_red(source -> right.get()));
-     *
-     * they had to be removed upon removal implementation
-     * due to double rotations they were briefly false on second call
-     *
-     */
-
-    //invert colors described above
-    //also because of double rotations,
+    //invert colors of parent and child (if exists)
     //check to avoid dereferencing a null left/right pointer.
+    if (is_red(source))
+        source -> color = Color::BLACK;
+    else
+        source -> color = Color::RED;
+
+    if (source -> left){
+        if (is_red(source -> left.get()))
+            source -> left -> color = Color::BLACK;
+        else
+            source -> left -> color = Color::RED;
+
+    }
+    if (source -> right){
+        if (is_red(source -> right.get()))
+            source -> right -> color = Color::BLACK;
+        else
+            source -> right -> color = Color::RED;
+    }
+
+    //Initial algorithm (below) doesn't work for deletion
+    /*
     if (!source -> left || !source -> right){
         source -> color = Color::RED;
         return;
@@ -608,7 +610,9 @@ void Red_Black<KEY, DATA>::flip_colors(Node<KEY, DATA> *source)
     source -> color = Color::RED;
     source -> left -> color = Color::BLACK;
     source -> right -> color = Color::BLACK;
+    */
 }
+
 //go to the smallest item and get its key
 template<typename KEY, typename DATA>
 KEY& Red_Black<KEY, DATA>::retrieve_ios_key(Node<KEY, DATA> *node)
