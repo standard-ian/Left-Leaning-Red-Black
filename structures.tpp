@@ -282,14 +282,21 @@ insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
         //make root red and it's left and right black
         flip_colors(root.get());
 
+    //hold on to the data from the next recursive call
+    DATA *temp{};
+
     //standard BST insertion procedude, head recursionn
+    //recurse left/right storing the inserted data reference in temp
     //go left if less, assign return to root -> right
     if (key < root -> key)
-        return insert(root -> left, key);
+        temp = &insert(root -> left, key);
 
     //right if greater, assign return to root -> left
     else if (key > root -> key)
-        return insert(root -> right, key);
+        temp = &insert(root -> right, key);
+
+    else
+        temp = &root -> data;
 
     //if root's right is red and its left is black, rotate left
     //left-leaning property - if a node has just one red child, it must be the left
@@ -305,8 +312,8 @@ insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
     + indentation(root -> left.get())
     + indentation(root -> right.get());
 
-    //return root to the previous call
-    return root -> data;
+    //return the newly inserted reference
+    return *temp;
 }
 
 //return the the data associated with a specific key
