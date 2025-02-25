@@ -54,10 +54,12 @@ string Node<KEY, DATA>::to_string() const
     stringstream new_stream{};
     to_string(new_stream, "", "");
     string graphical = new_stream.str();
+    graphical.insert(0, "\033[38;5;244m║\033[0;0m");
     graphical.insert(0, 1, '\n');
-    graphical.insert(0, "\033[38;5;244m╧\033[0;0m");
+    graphical.insert(0, "\033[38;5;244m│\033[0;0m");
     graphical.insert(0, 1, '\n');
-    graphical.insert(0, "\033[38;5;244m┌\033[0;0m─<root>");
+    graphical.insert(0, "\033[38;5;244m┌─\033[0;0m<root>");
+    graphical.insert(0, 1, '\n');
     return graphical;
 }
 
@@ -79,14 +81,14 @@ void Node<KEY, DATA>::to_string(std::stringstream &ss,
 
         //create a new prefix starting with current frame's child prefix
         //for the right appending the correct color
-        string new_prefix = child_prefix + "├─<R>" + (is_red(right.get()) ? RED : BLK);
+        string new_prefix = child_prefix + "│\n" + child_prefix + "├─<R>" + (is_red(right.get()) ? RED : BLK);
         //also update the indentation on the new child prefix
-        string new_child_prefix = child_prefix + "│       ";
+        string new_child_prefix = child_prefix + "│      ";
 
         //if there is no left subtree, indent but don't create a new branch
         if (!left){
-            new_prefix = child_prefix + "├─<R>" + (is_red(right.get()) ? RED : BLK);
-            new_child_prefix = child_prefix + "       ";
+            new_prefix = child_prefix + "│\n" + child_prefix + "├─<R>" + (is_red(right.get()) ? RED : BLK);
+            new_child_prefix = child_prefix + "      ";
         }
         //recurse right with new strings built as above
         right -> to_string(ss, new_prefix, new_child_prefix);
@@ -99,8 +101,8 @@ void Node<KEY, DATA>::to_string(std::stringstream &ss,
         //along with the appropriate red/black indicator
         //also pass new child prefix with correct intentation
         left -> to_string(ss,
-        child_prefix + "└─<L>" + (is_red(left.get()) ? RED : BLK),
-        child_prefix + "        ");
+        child_prefix + "│\n" + child_prefix + "└─<L>" + (is_red(left.get()) ? RED : BLK),
+        child_prefix + "       ");
 }
 
 /*
@@ -254,11 +256,6 @@ insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key, const DATA &data)
     if (is_red(root -> left.get()) && is_red(root -> left -> left.get()))
         root = rotate_right(root);
 
-    //fix root's indentation
-    root -> indentation_lvl = 1
-    + indentation(root -> left.get())
-    + indentation(root -> right.get());
-
     //return root to the previous call
     return move(root);
 }
@@ -306,11 +303,6 @@ insert(unique_ptr<Node<KEY, DATA>> &root, const KEY &key)
     //if 2 nodes to the left of root are successively red
     if (is_red(root -> left.get()) && is_red(root -> left -> left.get()))
         root = rotate_right(root);
-
-    //fix root's indentation
-    root -> indentation_lvl = 1
-    + indentation(root -> left.get())
-    + indentation(root -> right.get());
 
     //return the newly inserted reference
     return *temp;
@@ -502,15 +494,6 @@ rotate_left(unique_ptr<Node<KEY, DATA>> &node)
     temp -> color = temp -> left -> color;
     temp -> left -> color = Color::RED;
 
-    //update indentation_lvl
-    temp -> left -> indentation_lvl = 1
-    + indentation(temp -> left -> left.get())
-    + indentation(temp -> left -> right.get());
-
-    temp -> indentation_lvl = 1
-    + indentation(temp -> left.get())
-    + indentation(temp -> right.get());
-
     return temp;
 }
 
@@ -530,14 +513,6 @@ rotate_right(unique_ptr<Node<KEY, DATA>> &node)
     temp -> color = temp -> right -> color;
     temp -> right -> color = Color::RED;
 
-    //update indentation_lvl
-    temp -> right -> indentation_lvl = 1
-    + indentation(temp -> right -> left.get())
-    + indentation(temp -> right -> right.get());
-
-    temp -> indentation_lvl = 1
-    + indentation(temp -> left.get())
-    + indentation(temp -> right.get());
 
     return temp;
 }
@@ -680,11 +655,6 @@ fixup(unique_ptr<Node<KEY, DATA>> &node)
     if (is_red(node -> left.get()) && is_red(node -> right.get()))
         flip_colors(node.get());
 
-    //fix inentation_lvl
-    if (node)
-        node -> indentation_lvl = 1
-        + indentation(node -> left.get())
-        + indentation(node -> right.get());
 
     return move(node);
 }
@@ -695,15 +665,6 @@ template<typename KEY, typename DATA>
 bool Red_Black<KEY, DATA>::is_red(const Node<KEY, DATA> *node)
 {
     return Node<KEY, DATA>::is_red(node);
-}
-
-//get the agregated indentation of a given node
-template<typename KEY, typename DATA>
-int Red_Black<KEY, DATA>::indentation(const Node<KEY, DATA> *a_node) const
-{
-    if (!a_node)
-        return 0;
-    return a_node -> indentation_lvl;
 }
 
 

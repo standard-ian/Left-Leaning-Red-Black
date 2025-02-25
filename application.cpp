@@ -87,45 +87,56 @@ int Menu::load()
     while (!filein.eof()){
         string name{};
         int type{};
+        bool dupl{false};
 
         //first check the file for the type so correct initial object can be contstructed
         filein >> type;
         filein.ignore(100, ',');
-
         getline(filein, name, ',');
-        try{
-            switch (type){
-                case 1: {
-                            auto walk_ptr{make_shared<Walking_Contestant>(name, filein)};
-                            tree[name] = move(walk_ptr);
-                            ++num_loaded;
-                        }
-                    break;
 
-                case 2: {
-                            auto b_ptr{make_shared<Bicycle_Contestant>(name, filein)};
-                            tree[name] = move(b_ptr);
-                            ++num_loaded;
-                        }
-                    break;
+        //check for duplicates
+        //operator[] doesn't care, it just overwrites tree[name]
+        //this is the intended behavior
+        //if you don't want this behavior, use the named insert function which throws
+        //a TREE_ERROR::duplicate_name_exception
+        if (tree.find(name))
+            dupl = true;
 
-                case 3: {
-                            auto hm_ptr{make_shared<Half_Marathon_Contestant>(name, filein)};
-                            tree[name] = move(hm_ptr);
-                            ++num_loaded;
-                        }
-                    break;
+        //this version uses the overloaded operator[] of the Red_Black template.
+        switch (type){
+            case 1: {
+                        auto walk_ptr{make_shared<Walking_Contestant>(name, filein)};
+                        tree[name] = move(walk_ptr);
+                        ++num_loaded;
+                    }
+                break;
 
-                default:
-                    break;
-            }
-            filein.peek();
+            case 2: {
+                        auto b_ptr{make_shared<Bicycle_Contestant>(name, filein)};
+                        tree[name] = move(b_ptr);
+                        ++num_loaded;
+                    }
+                break;
+
+            case 3: {
+                        auto hm_ptr{make_shared<Half_Marathon_Contestant>(name, filein)};
+                        tree[name] = move(hm_ptr);
+                        ++num_loaded;
+                    }
+                break;
+
+            default:
+                break;
         }
-        catch (TREE_ERROR::duplicate_name_exception &error){
-            cout << error.msg << "Skipping...." << endl;
+
+        if (dupl){
+            cout << "\n" << name << " already registered, overwriting with newest named entry...." << endl;
+            --num_loaded;
         }
+        filein.peek();
     }
     filein.close();
+
     return num_loaded;
 }
 
@@ -155,6 +166,8 @@ bool Menu::reg()
 
     cout << "\nEnter the contestant's name.\n>";
     getline(cin, name);
+
+    //this version demonstrates the named insert function with exception handling
     try{
         switch (choice){
                 case 1: {
@@ -518,11 +531,14 @@ void Menu::animate()
 {
     int choice{};
 
-    cout << "\nAnimated graphical display." << endl;
+    cout << "\nAnimated graphical display."
+         << "\nInspired by the work of Nicolai Spohrer."
+         << endl;
     do{
         cout << "\nInsertion or removal?"
              << "\n0. Return to Main Menu."
-             << "\n1. Insertion."
+
+             << "\n\n1. Insertion."
              << "\n2. Removal."
              << "\n>";
         choice = read_int();

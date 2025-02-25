@@ -34,3 +34,5 @@ git:
 	git commit
 	git push
 
+valgrind:
+	valgrind ./$(PROG1)

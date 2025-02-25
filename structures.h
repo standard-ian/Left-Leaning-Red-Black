@@ -53,14 +53,17 @@ class Node
         DATA data;
         Color color;
         std::unique_ptr<Node> left, right;
-        int indentation_lvl;
 
-    //tree is a friend
-    //yes, the data is not completely encapsulated
-    //but this is a template
-    //nodes cannot be instantiated by themselves in a meaningful way
-    //and the client application cannot touch the data in the container
-    //without using the template methods
+   /*
+    * tree is a friend
+    * yes, the data is not completely encapsulated per OOP
+    * but this is a template and Node is just a private member of Red_Black,
+    * and the tree class keeps node well protected with const.
+    * The code with getters and setters and it is so much less readable (i've tried)
+    * nodes cannot be instantiated by themselves in a meaningful way
+    * and the client application cannot touch the data in the container
+    * without using the template methods of Red_Black
+    */
     template <typename K, typename D> friend class Red_Black;
 };
 
@@ -119,7 +122,6 @@ class Red_Black
         node_ptr fixup(node_ptr &root);
 
         bool is_red(const rb_node *node);
-        int indentation(const rb_node *root) const;
 };
 
 //helpers to avoid dereferencing a nullptr
